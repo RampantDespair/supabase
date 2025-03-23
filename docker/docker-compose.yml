@@ -527,6 +527,9 @@ services:
         "/app/bin/migrate && /app/bin/supavisor eval \"$$(cat /etc/pooler/pooler.exs)\" && /app/bin/server"
       ]
 
+  # To apply certs at auth level, run this command and restart the auth service
+  # - docker exec -it -u 0 supabase-auth sh -c "update-ca-certificates"
+  # - docker restart supabase-auth
   mail:
     container_name: supabase-mail
     image: axllent/mailpit:v1.23
