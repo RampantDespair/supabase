@@ -144,7 +144,7 @@ services:
 
       # GOTRUE_HOOK_CUSTOM_ACCESS_TOKEN_ENABLED: "true"
       # GOTRUE_HOOK_CUSTOM_ACCESS_TOKEN_URI: "pg-functions://postgres/public/custom_access_token_hook"
-      # GOTRUE_HOOK_CUSTOM_ACCESS_TOKEN_SECRETS: "<standard-base64-secret>"
+      # GOTRUE_HOOK_CUSTOM_ACCESS_TOKEN_SECRETS: ${CUSTOM_ACCESS_TOKEN_SECRETS}
 
       # GOTRUE_HOOK_MFA_VERIFICATION_ATTEMPT_ENABLED: "true"
       # GOTRUE_HOOK_MFA_VERIFICATION_ATTEMPT_URI: "pg-functions://postgres/public/mfa_verification_attempt"
