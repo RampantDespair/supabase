@@ -123,7 +123,7 @@ export function ComputeSizeField({ form, disabled }: ComputeSizeFieldProps) {
             layout="horizontal"
             label={'Compute size'}
             id={field.name}
-            className="md:flex lg:grid gap-4 lg:gap-2"
+            className="gap-5"
             labelOptional={
               <>
                 <BillingChangeBadge
@@ -153,13 +153,19 @@ export function ComputeSizeField({ form, disabled }: ComputeSizeFieldProps) {
                   type="default"
                   className="mt-3 border-violet-900 bg-violet-200 [&_h5]:text-violet-1100"
                   visible={showUpgradeBadge && form.watch('computeSize') === 'ci_nano'}
-                  title={'Upgrade to Micro Compute at no additional charge'}
+                  title={'Upgrade to Micro Compute'}
                   description="This Project is already paying for Micro Compute. You can upgrade to Micro Compute at any time when convenient."
                 />
               </>
             }
           >
-            <div className={!addonsError ? 'grid grid-cols-2 xl:grid-cols-3 flex-wrap gap-3' : ''}>
+            <div
+              className={
+                !addonsError
+                  ? 'grid gap-4 grid-cols-[repeat(auto-fit,minmax(min(100%,13em),1fr))]'
+                  : ''
+              }
+            >
               {isLoading ? (
                 Array(10)
                   .fill(0)

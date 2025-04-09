@@ -266,6 +266,29 @@ export interface FeaturePreviewDisabledEvent {
  */
 export interface ProjectCreationSimpleVersionSubmittedEvent {
   action: 'project_creation_simple_version_submitted'
+  /**
+   * the instance size selected in the project creation form
+   */
+  properties: {
+    instanceSize: string
+  }
+}
+
+/**
+ * Existing project creation form confirm modal was triggered and opened.
+ *
+ * @group Events
+ * @source studio
+ * @page new/{slug}
+ */
+export interface ProjectCreationSimpleVersionConfirmModalOpenedEvent {
+  action: 'project_creation_simple_version_confirm_modal_opened'
+  /**
+   * the instance size selected in the project creation form
+   */
+  properties: {
+    instanceSize: string
+  }
 }
 
 /**
@@ -1072,6 +1095,21 @@ export interface EdgeFunctionDeployButtonClickedEvent {
 }
 
 /**
+ * User clicked the confirm deploy updates button for an Edge Function in the code page within the warning model.
+ *
+ * @group Events
+ * @source studio
+ * @page /dashboard/project/{ref}/functions/{id}/code
+ */
+export interface EdgeFunctionDeployUpdatesConfirmClickedEvent {
+  action: 'edge_function_deploy_updates_confirm_clicked'
+  groups: {
+    project: string
+    organization: string
+  }
+}
+
+/**
  * User clicked the AI Assistant button to create an Edge Function.
  *
  * @group Events
@@ -1151,6 +1189,14 @@ export interface EdgeFunctionTemplateClickedEvent {
  */
 export interface EdgeFunctionViaCliButtonClickedEvent {
   action: 'edge_function_via_cli_button_clicked'
+  properties: {
+    /**
+     * Click on Via CLI can either happen:
+     *   1. on the main block when there are no functions
+     *   2. in the secondary action section of the page
+     */
+    origin: 'no_functions_block' | 'secondary_action'
+  }
   groups: {
     project: string
     organization: string
@@ -1209,6 +1255,23 @@ export interface EdgeFunctionTestSidePanelOpenedEvent {
 }
 
 /**
+ * User copied the command for a Supabase UI component.
+ *
+ * @group Events
+ * @source supabase-ui
+ * @page /ui/docs/{framework}/{templateTitle}
+ */
+export interface SupabaseUiCommandCopyButtonClickedEvent {
+  action: 'supabase_ui_command_copy_button_clicked'
+  properties: {
+    templateTitle: string
+    command: string
+    framework: 'nextjs' | 'react-router' | 'tanstack' | 'react'
+    packageManager: 'npm' | 'pnpm' | 'yarn' | 'bun'
+  }
+}
+
+/**
  * @hidden
  */
 export type TelemetryEvent =
@@ -1226,6 +1289,7 @@ export type TelemetryEvent =
   | FeaturePreviewEnabledEvent
   | FeaturePreviewDisabledEvent
   | ProjectCreationSimpleVersionSubmittedEvent
+  | ProjectCreationSimpleVersionConfirmModalOpenedEvent
   | ProjectCreationInitialStepPromptIntendedEvent
   | ProjectCreationInitialStepSubmittedEvent
   | ProjectCreationSecondStepPromptIntendedEvent
@@ -1274,6 +1338,7 @@ export type TelemetryEvent =
   | StudioPricingSidePanelOpenedEvent
   | ReportsDatabaseGrafanaBannerClickedEvent
   | EdgeFunctionDeployButtonClickedEvent
+  | EdgeFunctionDeployUpdatesConfirmClickedEvent
   | EdgeFunctionAiAssistantButtonClickedEvent
   | EdgeFunctionViaEditorButtonClickedEvent
   | EdgeFunctionTemplateClickedEvent
@@ -1281,3 +1346,4 @@ export type TelemetryEvent =
   | EdgeFunctionDeployUpdatesButtonClickedEvent
   | EdgeFunctionTestSendButtonClickedEvent
   | EdgeFunctionTestSidePanelOpenedEvent
+  | SupabaseUiCommandCopyButtonClickedEvent
