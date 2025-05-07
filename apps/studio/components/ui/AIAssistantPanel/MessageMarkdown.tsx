@@ -26,6 +26,8 @@ import { AssistantSnippetProps } from './AIAssistant.types'
 import { identifyQueryType } from './AIAssistant.utils'
 import CollapsibleCodeBlock from './CollapsibleCodeBlock'
 import { MessageContext } from './Message'
+import { useSelectedOrganization } from 'hooks/misc/useSelectedOrganization'
+import { useSelectedProject } from 'hooks/misc/useSelectedProject'
 
 export const OrderedList = memo(({ children }: { children: ReactNode }) => (
   <ol className="flex flex-col gap-y-4">{children}</ol>
@@ -108,6 +110,7 @@ const MemoizedQueryBlock = memo(
     >
       <QueryBlock
         lockColumns
+        showRunButtonIfNotReadOnly
         label={title}
         sql={sql}
         chartConfig={{
@@ -166,6 +169,8 @@ export const MarkdownPre = ({
   const { mutate: sendEvent } = useSendEventMutation()
   const snap = useAiAssistantStateSnapshot()
   const supportSQLBlocks = useFlag('reportsV2')
+  const project = useSelectedProject()
+  const org = useSelectedOrganization()
 
   const canCreateSQLSnippet = useCheckPermissions(PermissionAction.CREATE, 'user_content', {
     resource: { type: 'sql', owner_id: profile?.id },
@@ -232,6 +237,10 @@ export const MarkdownPre = ({
         ...(queryType === 'mutation'
           ? { category: identifyQueryType(cleanContent) ?? 'unknown' }
           : {}),
+      },
+      groups: {
+        project: project?.ref ?? 'Unknown',
+        organization: org?.slug ?? 'Unknown',
       },
     })
   }

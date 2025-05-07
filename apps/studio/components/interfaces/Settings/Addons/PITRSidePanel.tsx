@@ -106,6 +106,8 @@ const PITRSidePanel = () => {
   const hasChanges = selectedOption !== (subscriptionPitr?.variant.identifier ?? 'pitr_0')
   const isFreePlan = subscription?.plan?.id === 'free'
   const selectedPitr = availableOptions.find((option) => option.identifier === selectedOption)
+  const hasSufficientCompute =
+    !!subscriptionCompute && subscriptionCompute.variant.identifier !== 'ci_micro'
 
   // These are illegal states. If they are true, we should block the user from saving them.
   const blockDowngradeDueToReadReplicas =
@@ -115,6 +117,16 @@ const PITRSidePanel = () => {
     (selectedCategory !== 'on' ||
       // If the project is HIPAA, we don't allow the user to downgrade below 28 days
       selectedPitr?.identifier !== 'pitr_28')
+
+  const onConfirm = async () => {
+    if (!projectRef) return console.error('Project ref is required')
+
+    if (selectedOption === 'pitr_0' && subscriptionPitr !== undefined) {
+      removeAddon({ projectRef, variant: subscriptionPitr.variant.identifier })
+    } else {
+      updateAddon({ projectRef, type: 'pitr', variant: selectedOption as AddonVariantId })
+    }
+  }
 
   useEffect(() => {
     if (visible) {
@@ -127,16 +139,6 @@ const PITRSidePanel = () => {
       }
     }
   }, [visible, isLoading])
-
-  const onConfirm = async () => {
-    if (!projectRef) return console.error('Project ref is required')
-
-    if (selectedOption === 'pitr_0' && subscriptionPitr !== undefined) {
-      removeAddon({ projectRef, variant: subscriptionPitr.variant.identifier })
-    } else {
-      updateAddon({ projectRef, type: 'pitr', variant: selectedOption as AddonVariantId })
-    }
-  }
 
   return (
     <SidePanel
@@ -151,6 +153,7 @@ const PITRSidePanel = () => {
         !hasChanges ||
         isSubmitting ||
         !canUpdatePitr ||
+        (!!selectedPitr && !hasSufficientCompute) ||
         blockDowngradeDueToHipaa ||
         blockDowngradeDueToReadReplicas
       }
@@ -305,7 +308,7 @@ const PITRSidePanel = () => {
                 >
                   Upgrade your plan to change PITR for your project
                 </Alert>
-              ) : subscriptionCompute === undefined ? (
+              ) : !hasSufficientCompute ? (
                 <Alert
                   withIcon
                   variant="warning"
@@ -351,7 +354,9 @@ const PITRSidePanel = () => {
                           {option.identifier.split('_')[1]} days ago
                         </p>
                         <div className="flex items-center space-x-1 mt-2">
-                          <p className="text-foreground text-sm">{formatCurrency(option.price)}</p>
+                          <p className="text-foreground text-sm" translate="no">
+                            {formatCurrency(option.price)}
+                          </p>
                           <p className="text-foreground-light translate-y-[1px]"> / month</p>
                         </div>
                       </div>

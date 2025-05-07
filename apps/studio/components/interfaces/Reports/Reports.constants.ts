@@ -1,8 +1,8 @@
 import dayjs from 'dayjs'
 
+import { PlanId } from 'data/subscriptions/types'
 import type { DatetimeHelper } from '../Settings/Logs/Logs.types'
 import { PresetConfig, Presets, ReportFilterItem } from './Reports.types'
-import { PlanId } from 'data/subscriptions/types'
 
 export const LAYOUT_COLUMN_COUNT = 2
 
@@ -12,22 +12,34 @@ interface ReportsDatetimeHelper extends DatetimeHelper {
 
 export const REPORTS_DATEPICKER_HELPERS: ReportsDatetimeHelper[] = [
   {
+    text: 'Last 10 minutes',
+    calcFrom: () => dayjs().subtract(10, 'minute').toISOString(),
+    calcTo: () => dayjs().toISOString(),
+    availableIn: ['team', 'enterprise'],
+  },
+  {
+    text: 'Last 30 minutes',
+    calcFrom: () => dayjs().subtract(30, 'minute').toISOString(),
+    calcTo: () => dayjs().toISOString(),
+    availableIn: ['team', 'enterprise'],
+  },
+  {
     text: 'Last 60 minutes',
     calcFrom: () => dayjs().subtract(1, 'hour').startOf('day').toISOString(),
-    calcTo: () => '',
+    calcTo: () => dayjs().toISOString(),
     default: true,
     availableIn: ['free', 'pro', 'team', 'enterprise'],
   },
   {
     text: 'Last 3 hours',
     calcFrom: () => dayjs().subtract(3, 'hour').startOf('day').toISOString(),
-    calcTo: () => '',
+    calcTo: () => dayjs().toISOString(),
     availableIn: ['free', 'pro', 'team', 'enterprise'],
   },
   {
     text: 'Last 24 hours',
     calcFrom: () => dayjs().subtract(1, 'day').startOf('day').toISOString(),
-    calcTo: () => '',
+    calcTo: () => dayjs().toISOString(),
     availableIn: ['free', 'pro', 'team', 'enterprise'],
   },
   {
@@ -53,7 +65,7 @@ export const REPORTS_DATEPICKER_HELPERS: ReportsDatetimeHelper[] = [
 export const createFilteredDatePickerHelpers = (planId: PlanId) => {
   return REPORTS_DATEPICKER_HELPERS.map((helper) => ({
     ...helper,
-    disabled: !helper.availableIn.includes(planId),
+    disabled: !helper.availableIn?.includes(planId),
   }))
 }
 
@@ -307,7 +319,7 @@ limit 12
     queries: {
       mostFrequentlyInvoked: {
         queryType: 'db',
-        sql: (_params, where, orderBy) => `
+        sql: (_params, where, orderBy, runIndexAdvisor = false) => `
 -- Most frequently called queries
 set search_path to public, extensions;
 
@@ -325,16 +337,35 @@ select
     -- min_time,
     -- max_time,
     -- mean_time,
-    statements.rows / statements.calls as avg_rows
+    statements.rows / statements.calls as avg_rows${
+      runIndexAdvisor
+        ? `,
+    case 
+      when (lower(statements.query) like 'select%' or lower(statements.query) like 'with pgrst%')
+      then (
+        select json_build_object(
+          'has_suggestion', array_length(index_statements, 1) > 0,
+          'startup_cost_before', startup_cost_before,
+          'startup_cost_after', startup_cost_after,
+          'total_cost_before', total_cost_before,
+          'total_cost_after', total_cost_after,
+          'index_statements', index_statements
+        )
+        from index_advisor(statements.query)
+      )
+      else null
+    end as index_advisor_result`
+        : ''
+    }
   from pg_stat_statements as statements
     inner join pg_authid as auth on statements.userid = auth.oid
   ${where || ''}
   ${orderBy || 'order by statements.calls desc'}
-  limit 20;`,
+  limit 20`,
       },
       mostTimeConsuming: {
         queryType: 'db',
-        sql: (_, where, orderBy) => `
+        sql: (_, where, orderBy, runIndexAdvisor = false) => `
 -- Most time consuming queries
 set search_path to public, extensions;
 
@@ -343,16 +374,35 @@ select
     statements.query,
     statements.calls,
     statements.total_exec_time + statements.total_plan_time as total_time,
-    to_char(((statements.total_exec_time + statements.total_plan_time)/sum(statements.total_exec_time + statements.total_plan_time) OVER()) * 100, 'FM90D0') || '%'  AS prop_total_time
+    to_char(((statements.total_exec_time + statements.total_plan_time)/sum(statements.total_exec_time + statements.total_plan_time) OVER()) * 100, 'FM90D0') || '%'  AS prop_total_time${
+      runIndexAdvisor
+        ? `,
+    case 
+      when (lower(statements.query) like 'select%' or lower(statements.query) like 'with pgrst%')
+      then (
+        select json_build_object(
+          'has_suggestion', array_length(index_statements, 1) > 0,
+          'startup_cost_before', startup_cost_before,
+          'startup_cost_after', startup_cost_after,
+          'total_cost_before', total_cost_before,
+          'total_cost_after', total_cost_after,
+          'index_statements', index_statements
+        )
+        from index_advisor(statements.query)
+      )
+      else null
+    end as index_advisor_result`
+        : ''
+    }
   from pg_stat_statements as statements
     inner join pg_authid as auth on statements.userid = auth.oid
   ${where || ''}
   ${orderBy || 'order by total_time desc'}
-  limit 20;`,
+  limit 20`,
       },
       slowestExecutionTime: {
         queryType: 'db',
-        sql: (_params, where, orderBy) => `
+        sql: (_params, where, orderBy, runIndexAdvisor = false) => `
 -- Slowest queries by max execution time
 set search_path to public, extensions;
 
@@ -370,7 +420,26 @@ select
     -- min_time,
     -- max_time,
     -- mean_time,
-    statements.rows / statements.calls as avg_rows
+    statements.rows / statements.calls as avg_rows${
+      runIndexAdvisor
+        ? `,
+    case 
+      when (lower(statements.query) like 'select%' or lower(statements.query) like 'with pgrst%')
+      then (
+        select json_build_object(
+          'has_suggestion', array_length(index_statements, 1) > 0,
+          'startup_cost_before', startup_cost_before,
+          'startup_cost_after', startup_cost_after,
+          'total_cost_before', total_cost_before,
+          'total_cost_after', total_cost_after,
+          'index_statements', index_statements
+        )
+        from index_advisor(statements.query)
+      )
+      else null
+    end as index_advisor_result`
+        : ''
+    }
   from pg_stat_statements as statements
     inner join pg_authid as auth on statements.userid = auth.oid
   ${where || ''}
